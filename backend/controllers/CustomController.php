@@ -19,17 +19,14 @@ class CustomController extends Controller {
                         'actions' => ['index', 'view', 'create', 'update', 'delete'],
                         'roles' => ['admin'],
                     ],
-                    [
-                        'allow' => true,
-                        'actions' => ['index', 'view', 'create', 'update', 'delete'],
-                        'roles' => ['seller'],
-                    ],
                 ],
             ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
-                    'delete' => ['post'],
+                    'index' => ['GET'],
+                    'view' => ['GET'],
+                    'delete' => ['POST'],
                 ],
             ],
         ];

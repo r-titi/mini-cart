@@ -6,10 +6,7 @@ use common\models\Category;
 use yii\behaviors\TimestampBehavior;
 use yii\data\ActiveDataProvider;
 use yii\db\ActiveRecord;
-use yii\filters\AccessControl;
-use yii\web\Controller;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 
 /**
  * CategoryController implements the CRUD actions for Category model.
@@ -24,23 +21,6 @@ class CategoryController extends CustomController
         return array_merge(
             parent::behaviors(),
             [
-                'access' => [
-                    'class' => AccessControl::className(),
-                    'only' => ['index', 'view', 'create', 'update', 'delete'], //only be applied to
-                    'rules' => [
-                        [
-                            'allow' => true,
-                            'actions' => ['index', 'view', 'create', 'update', 'delete'],
-                            'roles' => ['admin'],
-                        ],
-                    ],
-                ],
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
                 'timestamp' => [
                     'class' => TimestampBehavior::className(),
                     'attributes' => [

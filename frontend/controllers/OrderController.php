@@ -5,12 +5,11 @@ namespace frontend\controllers;
 use common\models\Order;
 use Yii;
 use yii\data\ActiveDataProvider;
-use yii\data\ArrayDataProvider;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\web\Controller;
 
-class OrderController extends Controller {
+class OrderController extends CustomController {
 
     public function behaviors()
     {

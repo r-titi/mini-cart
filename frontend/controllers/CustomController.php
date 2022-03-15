@@ -24,6 +24,8 @@ class CustomController extends Controller {
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
+                    'index' => ['GET'],
+                    'view' => ['GET'],
                     'delete' => ['post'],
                 ],
             ],

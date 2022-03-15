@@ -17,13 +17,15 @@ class CustomController extends Controller {
                     [
                         'allow' => true,
                         'actions' => ['index', 'view', 'create', 'update', 'delete'],
-                        'roles' => ['@'],
+                        'roles' => ['seller'],
                     ],
                 ],
             ],
             'verbs' => [
                 'class' => VerbFilter::className(),
                 'actions' => [
+                    'index' => ['GET'],
+                    'view' => ['GET'],
                     'delete' => ['post'],
                 ],
             ],

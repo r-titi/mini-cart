@@ -7,9 +7,7 @@ use common\models\Product;
 use seller\traits\PermissionTrait;
 use Yii;
 use yii\data\ActiveDataProvider;
-use yii\filters\AccessControl;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 use yii\web\ForbiddenHttpException;
 use yii\web\UploadedFile;
 
@@ -27,23 +25,6 @@ class ProductController extends CustomController
         return array_merge(
             parent::behaviors(),
             [
-                'access' => [
-                    'class' => AccessControl::className(),
-                    'only' => ['index', 'all', 'view', 'create', 'update', 'delete'], //only be applied to
-                    'rules' => [
-                        [
-                            'allow' => true,
-                            'actions' => ['index', 'all', 'view', 'create', 'update', 'delete'],
-                            'roles' => ['seller'],
-                        ],
-                    ],
-                ],
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
                 // [
                 //     'class' => BlameableBehavior::className(),
                 //     'createdByAttribute' => 'user_id',
@@ -79,27 +60,6 @@ class ProductController extends CustomController
         ]);
     }
 
-    public function actionAll()
-    {
-        $dataProvider = new ActiveDataProvider([
-            'query' => Product::find(),
-            /*
-            'pagination' => [
-                'pageSize' => 50
-            ],
-            'sort' => [
-                'defaultOrder' => [
-                    'id' => SORT_DESC,
-                ]
-            ],
-            */
-        ]);
-
-        return $this->render('all', [
-            'dataProvider' => $dataProvider,
-        ]);
-    }
-
     /**
      * Displays a single Product model.
      * @param int $id ID
@@ -124,7 +84,7 @@ class ProductController extends CustomController
 
         if ($this->request->isPost) {
             $model->user_id = Yii::$app->user->id;
-            $uploadPath = Yii::getAlias('@common/uploads');
+            $uploadPath = Yii::getAlias('@storage/uploads');
             $file = UploadedFile::getInstance($model, 'image');
             if(!in_array($file->extension, ['png', 'jpg'])) {
                 echo 'You should upload image only';
@@ -159,14 +119,11 @@ class ProductController extends CustomController
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
-        // if (!Yii::$app->user->can('admin') && Yii::$app->user->id != $model->user_id) {
-        //     throw new ForbiddenHttpException('You are not allowed to edit this product.');
-        // }
         if(!$this->canEdit($model->user_id)) {
             throw new ForbiddenHttpException('You are not allowed to edit this product.');
         }
 
-        $uploadPath = Yii::getAlias('@common/uploads');
+        $uploadPath = Yii::getAlias('@storage/uploads');
         $file = UploadedFile::getInstance($model, 'image');
         if($file && !in_array($file->extension, ['png', 'jpg'])) {
             echo 'You should upload image only';

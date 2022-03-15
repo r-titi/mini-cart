@@ -3,7 +3,6 @@
 namespace seller\traits;
 
 use Yii;
-use yii\web\ForbiddenHttpException;
 
 trait PermissionTrait {
     public function canEdit($model_owner) {

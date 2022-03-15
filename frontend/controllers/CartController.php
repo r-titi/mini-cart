@@ -5,10 +5,8 @@ namespace frontend\controllers;
 use Yii;
 use yii\data\ArrayDataProvider;
 use yii\filters\AccessControl;
-use yii\filters\VerbFilter;
-use yii\web\Controller;
 
-class CartController extends Controller {
+class CartController extends CustomController {
 
     public function behaviors()
     {
@@ -26,20 +24,13 @@ class CartController extends Controller {
                         ],
                     ],
                 ],
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
             ]
         );
     }
     
     public function actionIndex() {
-        $cart = Yii::$app->Cart->getInstance();
         $dataProvider = new ArrayDataProvider([
-            'allModels' => $cart->getAll(),
+            'allModels' => Yii::$app->Cart->getInstance()->getAll(),
             /*
             'pagination' => [
                 'pageSize' => 50
@@ -52,23 +43,19 @@ class CartController extends Controller {
             */
         ]);
 
-        $cart_total = $cart->getTotal();
-
         return $this->render('index', [
             'dataProvider' => $dataProvider,
-            'cart_total' => $cart_total
+            'cart_total' => Yii::$app->Cart->getInstance()->getTotal()
         ]);
     }
 
     public function actionClearCart() {
-        $cart = Yii::$app->Cart->getInstance();
-        $cart->clear();
+        Yii::$app->Cart->getInstance()->clear();
         return $this->redirect(['cart/index']);
     }
 
     public function actionAdd($model_id) {
-        $cart = Yii::$app->Cart->getInstance();
-        $cart->add($model_id, 1);
+        Yii::$app->Cart->getInstance()->add($model_id, 1);
         return $this->redirect(['cart/index']);
     }
 }

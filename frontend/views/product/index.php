@@ -9,16 +9,12 @@ use yii\widgets\Pjax;
 /* @var $this yii\web\View */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 
-$this->title = 'My Products';
+$this->title = 'All Products';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
 <div class="product-index">
 
     <h1><?= Html::encode($this->title) ?></h1>
-
-    <p>
-        <?= Html::a('Create Product', ['create'], ['class' => 'btn btn-success']) ?>
-    </p>
 
     <?php Pjax::begin(); ?>
 
@@ -42,12 +38,7 @@ $this->params['breadcrumbs'][] = $this->title;
                     return $data->user->username;  
                 },
             ],
-            [
-                'class' => ActionColumn::className(),
-                'urlCreator' => function ($action, Product $model, $key, $index, $column) {
-                    return Url::toRoute([$action, 'id' => $model->id]);
-                 }
-            ],
+           
         ],
     ]); ?>
 

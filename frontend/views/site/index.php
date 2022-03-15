@@ -19,7 +19,7 @@ $this->title = 'My Yii Application';
             <?php foreach($products as $product) {
                 ?>
                 <div class="col-lg-4">
-                    <img src="<?= 'http://csp-front.test/uploads/' . $product->image ?>" style="width:100px;height:100px;" alt="sasa">
+                    <img src="<?= 'http://csp-storage.test/uploads/' . $product->image ?>" style="width:100px;height:100px;" alt="sasa">
                     <h2><?= $product->name; ?></h2>
                     <span class=""><?= $product->price; ?> JD</span>
                     <br>

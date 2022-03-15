@@ -41,12 +41,12 @@ class AuthController extends Controller {
             $user->access_token = Yii::$app->security->generateRandomString();
             $user->save();
 
-            return $this->sendResponse(200, 'Login success', [
+            return $this->sendResponse('Login success', [
                 'username' => $user->username,
                 'access-token' => $user->access_token
             ]);
         } else {
-            return $this->sendResponse(401, 'Login failed', $model->getErrors());
+            return $this->sendResponse('Login failed', $model->getErrors(), 401);
         }
     }
 }

@@ -5,7 +5,6 @@ namespace frontend\controllers;
 use common\models\Order;
 use common\models\OrderItem;
 use Exception;
-use frontend\cart\Cart;
 use Yii;
 use yii\data\ArrayDataProvider;
 use yii\filters\AccessControl;
@@ -42,7 +41,7 @@ class CheckoutController extends Controller {
 
     public function actionIndex() {
         $cart = Yii::$app->Cart->getInstance();
-        if($cart->count() == 0) {
+        if($cart->count() <= 0) {
             echo 'No Items in cart';
             exit;
         }
@@ -60,46 +59,41 @@ class CheckoutController extends Controller {
             */
         ]);
 
-        $cart_items = $cart->getAll();
-        $cart_total = $cart->getTotal();
-
         return $this->render('index', [
             'dataProvider' => $dataProvider,
-            'cart_items' => $cart_items,
-            'cart_total' => $cart_total
+            'cart_items' => $cart->getAll(),
+            'cart_total' => $cart->getTotal()
         ]);
     }
 
     public function actionSubmitOrder() {
         $order = new Order();
         $cart = Yii::$app->Cart->getInstance();
-        if($cart->count() == 0) {
+        if($cart->count() <= 0) {
             echo 'No Items in cart';
             die();
         }
 
         try {
-            if ($this->request->isPost) {
-                $order->user_id = Yii::$app->user->id;
-                $order->total = $cart->getTotal();
-                $order->status = 'pending';
-                if($order->save(false)) {
-                    foreach($cart->getAll() as $cart_item) {
-                        $orderItem = new OrderItem();
-                        $orderItem->qty = $cart_item['qty'];
-                        $orderItem->order_id = $order->id;
-                        $orderItem->product_id = $cart_item['id'];
-                        $orderItem->save(false);
-                    }
-
-                    $cart->clear();
-                    Yii::$app->session->getFlash('success', 'Order submited successfully!');
-                    return $this->redirect(['site/index']); 
-                } else {
-                    print_r($order->errors);
-                    exit;
+            $order->user_id = Yii::$app->user->id;
+            $order->total = $cart->getTotal();
+            $order->status = 'pending';
+            if($order->save(false)) {
+                foreach($cart->getAll() as $cart_item) {
+                    $orderItem = new OrderItem();
+                    $orderItem->qty = $cart_item['qty'];
+                    $orderItem->order_id = $order->id;
+                    $orderItem->product_id = $cart_item['id'];
+                    $orderItem->save(false);
                 }
-            }           
+
+                $cart->clear();
+                Yii::$app->session->getFlash('success', 'Order submited successfully!');
+                return $this->redirect(['site/index']); 
+            } else {
+                print_r($order->errors);
+                exit;
+            }    
         } catch(Exception $e) {
             echo $e->getMessage();
             exit;

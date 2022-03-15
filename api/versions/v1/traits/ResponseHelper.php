@@ -3,8 +3,7 @@
 namespace api\versions\v1\traits;
 
 trait ResponseHelper {
-    public function sendResponse($code = 200, $msg, $data) {
-
+    public function sendResponse($msg, $data, $code = 200) {
         $this->response->setStatusCode($code);
         return [
             'message' => $msg,

@@ -2,6 +2,7 @@
 
 namespace seller\controllers;
 
+use common\models\forms\LoginForm;
 use seller\models\ResendVerificationEmailForm;
 use seller\models\VerifyEmailForm;
 use Yii;
@@ -10,7 +11,6 @@ use yii\web\BadRequestHttpException;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
-use common\models\LoginForm;
 use common\models\Product;
 use seller\models\PasswordResetRequestForm;
 use seller\models\ResetPasswordForm;

@@ -2,12 +2,12 @@
 
 namespace backend\controllers;
 
+use common\components\Helpers;
 use common\models\Category;
 use common\models\Product;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\web\NotFoundHttpException;
-use yii\filters\VerbFilter;
 use yii\web\ForbiddenHttpException;
 use yii\web\UploadedFile;
 
@@ -16,23 +16,6 @@ use yii\web\UploadedFile;
  */
 class ProductController extends CustomController
 {
-    /**
-     * @inheritDoc
-     */
-    public function behaviors()
-    {
-        return array_merge(
-            parent::behaviors(),
-            [
-                'verbs' => [
-                    'class' => VerbFilter::className(),
-                    'actions' => [
-                        'delete' => ['POST'],
-                    ],
-                ],
-            ]
-        );
-    }
 
     /**
      * Lists all Product models.
@@ -81,11 +64,12 @@ class ProductController extends CustomController
     public function actionCreate()
     {
         $model = new Product();
-        $model->setScenario('create');
+        $model->setScenario(Product::SCENARIO_CREATE);
 
         if ($this->request->isPost) {
+            // Helpers::dd($_FILES['image']);
             $model->user_id = Yii::$app->user->id;
-            $uploadPath = Yii::getAlias('@frontend/uploads');
+            $uploadPath = Yii::getAlias('@storage/uploads');
             $file = UploadedFile::getInstance($model, 'image');
 
             if ($model->load($this->request->post()) && $model->save()) {
@@ -115,11 +99,8 @@ class ProductController extends CustomController
     {
         $model = $this->findModel($id);
         $model->scenario = Product::SCENARIO_UPDATE;
-        if (!Yii::$app->user->can('admin') && Yii::$app->user->id != $model->user_id) {
-            throw new ForbiddenHttpException('You are not allowed to edit this product.');
-        }
 
-        $uploadPath = Yii::getAlias('@frontend/uploads');
+        $uploadPath = Yii::getAlias('@storage/uploads');
         $file = UploadedFile::getInstance($model, 'image');
         $ofile = $model->image;
         if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
@@ -149,12 +130,7 @@ class ProductController extends CustomController
      */
     public function actionDelete($id)
     {
-        $model = $this->findModel($id);
-        if (!Yii::$app->user->can('admin') && Yii::$app->user->id != $model->user_id) {
-            throw new ForbiddenHttpException('You are not allowed to edit this product.');
-        }
-        
-        $model->delete();
+        $this->findModel($id)->delete();
         return $this->redirect(['index']);
     }
 
