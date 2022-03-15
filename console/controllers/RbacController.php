@@ -29,6 +29,10 @@ class RbacController extends Controller
         $manageUsers->description = 'Manage users';
         $auth->add($manageUsers);
 
+        $userRole = $auth->createRole('user');
+        $userRole->description = 'User';
+        $auth->add($userRole);
+
         $seller = $auth->createRole('seller');
         $seller->description = 'Seller';
         $auth->add($seller);

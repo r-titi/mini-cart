@@ -2,6 +2,7 @@
 
 namespace common\models\forms;
 
+use common\components\Helpers;
 use common\models\User;
 use Yii;
 use yii\base\Model;
@@ -16,6 +17,7 @@ class LoginForm extends Model
     public $password;
     public $rememberMe = true;
     private $_user;
+    public $role = 'user';
 
     /**
      * {@inheritdoc}
@@ -49,33 +51,14 @@ class LoginForm extends Model
         }
     }
 
-    /**
-     * Logs in a user using the provided username and password.
-     *
-     * @return bool whether the user is logged in successfully
-     */
-    public function login($role)
+    public function login()
     {
         if ($this->validate()) {
-            switch($role) {
-                case 'user':
-                    return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
-                break;
-                case 'admin':
-                    if(Yii::$app->authManager->checkAccess($this->getUser()->id, 'admin')) {
-                        return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
-                    } else {
-                        throw new ForbiddenHttpException('You are not allowed to login here.');
-                    }
-                break;
-                case 'seller':
-                    if(Yii::$app->authManager->checkAccess($this->getUser()->id, 'seller')) {
-                        return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
-                    } else {
-                        throw new ForbiddenHttpException('You are not allowed to login here.');
-                    }
-                break;
+            if(Yii::$app->authManager->checkAccess($this->getUser()->id, $this->role)) {
+                return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600 * 24 * 30 : 0);
             }
+
+            throw new ForbiddenHttpException('You are not allowed to login here.');
         }
         
         return false;

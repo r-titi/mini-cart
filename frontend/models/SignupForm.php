@@ -5,6 +5,7 @@ namespace frontend\models;
 use Yii;
 use yii\base\Model;
 use common\models\User;
+use yii\base\InvalidParamException;
 
 /**
  * Signup form
@@ -56,7 +57,13 @@ class SignupForm extends Model
         $user->generateAuthKey();
         $user->generateEmailVerificationToken();
 
-        return $user->save() && $this->sendEmail($user);
+        $auth = Yii::$app->authManager;
+        $roleObject = $auth->getRole('user');
+        if (!$roleObject) {  
+            throw new InvalidParamException("There is no role user");
+        }
+
+        return $user->save() && $this->sendEmail($user) && $auth->assign($roleObject, $user->id);
     }
 
     /**
