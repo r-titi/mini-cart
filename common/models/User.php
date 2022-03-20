@@ -2,10 +2,7 @@
 
 namespace common\models;
 
-use tuyakhov\notifications\NotifiableInterface;
-use tuyakhov\notifications\NotifiableTrait;
 use Yii;
-use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\web\IdentityInterface;
@@ -26,14 +23,11 @@ use yii\web\IdentityInterface;
  * @property string $password write-only password
  * @property string $access_token
  */
-class User extends ActiveRecord implements IdentityInterface, NotifiableInterface
+class User extends ActiveRecord implements IdentityInterface
 {
-    use NotifiableTrait;
-
     const STATUS_DELETED = 0;
     const STATUS_INACTIVE = 9;
     const STATUS_ACTIVE = 10;
-
 
     /**
      * {@inheritdoc}
@@ -234,10 +228,5 @@ class User extends ActiveRecord implements IdentityInterface, NotifiableInterfac
     public function getCarts()
     {
         return $this->hasMany(Cart::className(), ['user_id' => 'id']);
-    }
-
-    public function routeNotificationForMail() 
-    {
-        return $this->email;
     }
 }
