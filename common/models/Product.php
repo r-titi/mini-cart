@@ -2,9 +2,7 @@
 
 namespace common\models;
 
-use api\helpers\File;
 use Yii;
-use yii\web\UploadedFile;
 
 /**
  * This is the model class for table "{{%product}}".
@@ -56,7 +54,8 @@ class Product extends \yii\db\ActiveRecord
             [['name'], 'string', 'max' => 255],
             [['category_id'], 'exist', 'skipOnError' => true, 'targetClass' => Category::className(), 'targetAttribute' => ['category_id' => 'id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_id' => 'id']],
-            [['image'], 'required'],
+            [['image'], 'required', 'on' => self::SCENARIO_CREATE],
+            [['image'], 'image', 'extensions' => 'jpg, jpeg, png',],
             // [['image'], 'imageRequired', 'skipOnEmpty' => false],
             // [['image'], 'imageType', 'skipOnEmpty' => false]
         ];

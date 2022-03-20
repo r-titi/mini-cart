@@ -2,8 +2,13 @@
 
 namespace seller\controllers;
 
+use common\components\Helpers;
 use common\models\Category;
+use common\models\data\ProductData;
 use common\models\Product;
+use common\repositories\ProductRepository;
+use common\services\product\CreateService;
+use common\traits\FileHelper;
 use seller\traits\PermissionTrait;
 use Yii;
 use yii\data\ActiveDataProvider;
@@ -16,7 +21,7 @@ use yii\web\UploadedFile;
  */
 class ProductController extends CustomController
 {
-    use PermissionTrait;
+    use PermissionTrait, FileHelper;
     /**
      * @inheritDoc
      */
@@ -80,32 +85,26 @@ class ProductController extends CustomController
      */
     public function actionCreate()
     {
-        $model = new Product();
-
+        $product = new Product();
         if ($this->request->isPost) {
-            $model->user_id = Yii::$app->user->id;
-            $uploadPath = Yii::getAlias('@storage/uploads');
-            $file = UploadedFile::getInstance($model, 'image');
-            if(!in_array($file->extension, ['png', 'jpg'])) {
-                echo 'You should upload image only';
-                exit;
-            }
+            $productData = new ProductData;
+            $productData->load($this->request->post('Product'));
+            $productData->user_id = Yii::$app->user->id;
+            $productData->image = UploadedFile::getInstance($product, 'image');
 
-            if ($model->load($this->request->post()) && $model->save()) {
-                $model->image = \Yii::$app->security->generateRandomString() . '.' . $file->extension;
-                $file->saveAs($uploadPath . '/' . $model->image);
-                $model->save();
-                return $this->redirect(['view', 'id' => $model->id]);
+            $createService = new CreateService(); 
+            $product = $createService->create($productData);
+
+            if (!$product->hasErrors()) {
+                return $this->redirect(['view', 'id' => $product->id]);
             }
         } else {
-            $model->loadDefaultValues();
+            $product->loadDefaultValues();
         }
 
-        $categories = Category::find()->all();
-
         return $this->render('create', [
-            'model' => $model,
-            'categories' => $categories
+            'model' => $product,
+            'categories' => Category::find()->all()
         ]);
     }
 
@@ -119,35 +118,38 @@ class ProductController extends CustomController
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $model->scenario = Product::SCENARIO_UPDATE;
         if(!$this->canEdit($model->user_id)) {
             throw new ForbiddenHttpException('You are not allowed to edit this product.');
         }
 
-        $uploadPath = Yii::getAlias('@storage/uploads');
-        $file = UploadedFile::getInstance($model, 'image');
-        if($file && !in_array($file->extension, ['png', 'jpg'])) {
-            echo 'You should upload image only';
-            exit;
-        }
-
-        $ofile = $model->image;
-
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            if(isset($file)) {
-                $model->image = \Yii::$app->security->generateRandomString() . '.' . $file->extension;
-                $file->saveAs($uploadPath . '/' . $model->image);
-            } else {
-                $model->image = $ofile;
+        if ($this->request->isPost) {
+            $oldImage = $model->image;
+        
+            $model->name  = Yii::$app->request->post('Product')['name'] ?? $model->name;
+            $model->type  = Yii::$app->request->post('Product')['type'] ?? $model->type;
+            $model->qty   = Yii::$app->request->post('Product')['qty'] ?? $model->qty;
+            $model->price = Yii::$app->request->post('Product')['price'] ?? $model->price;
+            $model->category_id = Yii::$app->request->post('Product')['category_id'] ?? $model->category_id;
+            
+            $newImage = UploadedFile::getInstance($model, 'image');
+            $model->image = $newImage ?? $model->image;
+            if($model->validate()) {
+                if($newImage != null) {
+                    $imgUniqueName = uniqid('pro-');
+                    $newImage->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $newImage->extension);
+                    $model->image = $imgUniqueName . '.' . $model->image->extension;                
+                    $this->deleteFile(Yii::getAlias('@storage/uploads') . '/' . $oldImage);
+                }
+    
+                $model->save();
+                return $this->redirect(['view', 'id' => $model->id]);
             }
-
-            $model->save();
-            return $this->redirect(['view', 'id' => $model->id]);
         }
 
-        $categories = Category::find()->all();
         return $this->render('update', [
             'model' => $model,
-            'categories' => $categories
+            'categories' => Category::find()->all()
         ]);
     }
 

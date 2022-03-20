@@ -90,7 +90,6 @@ class ManagmentController extends BaseController
 
         if ($model->validate()) {
             $imgUniqueName = uniqid('pro-');
-            // $model->image->saveAs('@frontend/uploads' . '/' . $imgUniqueName . '.' . $model->image->extension);
             $model->image->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $model->image->extension);
             $model->image = $imgUniqueName . '.' . $model->image->extension;
             $model->save();
@@ -178,8 +177,7 @@ class ManagmentController extends BaseController
     }
 
     public function actionDeleteCategory($id) {
-        $model = $this->findModel($id, self::CATEGORY);
-        if ($model->delete() > 0) {
+        if ($this->findModel($id, self::CATEGORY)->delete() > 0) {
             $this->response->setStatusCode(204);
         }
     }
@@ -196,8 +194,7 @@ class ManagmentController extends BaseController
     }
 
     public function actionDeleteOrder($id) {
-        $model = $this->findModel($id, self::ORDER);
-        if ($model->delete() > 0) {
+        if ($this->findModel($id, self::ORDER)->delete() > 0) {
             $this->response->setStatusCode(204);
         }
     }

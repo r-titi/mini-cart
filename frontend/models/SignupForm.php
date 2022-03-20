@@ -2,6 +2,7 @@
 
 namespace frontend\models;
 
+use common\models\forms\SendEmailForm;
 use Yii;
 use yii\base\Model;
 use common\models\User;
@@ -63,7 +64,27 @@ class SignupForm extends Model
             throw new InvalidParamException("There is no role user");
         }
 
-        return $user->save() && $this->sendEmail($user) && $auth->assign($roleObject, $user->id);
+        return $user->save() && $this->sendWelcomeEmail() && $this->sendVerifyEmail($user) && $auth->assign($roleObject, $user->id);
+    }
+
+    protected function sendWelcomeEmail() {
+        $sendEmail = new SendEmailForm;
+        $sendEmail->name = $this->username;
+        $sendEmail->email = $this->email;
+        $sendEmail->subject = 'Welcome Email';
+        $sendEmail->view =  ['html' => 'welcomeEmail-html'];
+        $sendEmail->params =  ['username' => $this->username];
+        return $sendEmail->send();
+    }
+
+    protected function sendVerifyEmail($user) {
+        $sendEmail = new SendEmailForm;
+        $sendEmail->name = $this->username;
+        $sendEmail->email = $this->email;
+        $sendEmail->subject = 'Account registration at ' . Yii::$app->name;
+        $sendEmail->view =  ['html' => 'emailVerify-html', 'text' => 'emailVerify-text'];
+        $sendEmail->params = ['user' => $user];
+        return $sendEmail->send();
     }
 
     /**

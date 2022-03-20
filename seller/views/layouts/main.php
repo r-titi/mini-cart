@@ -21,6 +21,22 @@ AppAsset::register($this);
     <?php $this->registerCsrfMetaTags() ?>
     <title><?= Html::encode($this->title) ?></title>
     <?php $this->head() ?>
+    <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+    <script>
+        var user_id = <?= Yii::$app->user->id; ?>;
+        console.log('user_id');
+        // Enable pusher logging - don't include this in production
+        Pusher.logToConsole = true;
+
+        var pusher = new Pusher('74738b5c4be9d99c66b1', {
+            cluster: 'ap2'
+        });
+
+        var channel = pusher.subscribe('seller-' + user_id);
+        channel.bind('my-event', function(data) {
+            alert(JSON.stringify(data['subject']));
+        });
+    </script>
 </head>
 <body class="d-flex flex-column h-100">
 <?php $this->beginBody() ?>

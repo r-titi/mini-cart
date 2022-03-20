@@ -5,6 +5,7 @@ namespace backend\controllers;
 use common\components\Helpers;
 use common\models\Category;
 use common\models\Product;
+use common\traits\FileHelper;
 use Yii;
 use yii\data\ActiveDataProvider;
 use yii\web\NotFoundHttpException;
@@ -16,6 +17,7 @@ use yii\web\UploadedFile;
  */
 class ProductController extends CustomController
 {
+    use FileHelper;
 
     /**
      * Lists all Product models.
@@ -67,14 +69,20 @@ class ProductController extends CustomController
         $model->setScenario(Product::SCENARIO_CREATE);
 
         if ($this->request->isPost) {
-            // Helpers::dd($_FILES['image']);
-            $model->user_id = Yii::$app->user->id;
-            $uploadPath = Yii::getAlias('@storage/uploads');
-            $file = UploadedFile::getInstance($model, 'image');
 
-            if ($model->load($this->request->post()) && $model->save()) {
-                $model->image = \Yii::$app->security->generateRandomString() . '.' . $file->extension;
-                $file->saveAs($uploadPath . '/' . $model->image);
+            // Helpers::dd($filse);
+            $model->user_id = Yii::$app->user->id;
+            $model->name  = Yii::$app->request->post('Product')['name'];
+            $model->type  = Yii::$app->request->post('Product')['type'];
+            $model->qty   = Yii::$app->request->post('Product')['qty'];
+            $model->price = Yii::$app->request->post('Product')['price'];
+            $model->category_id = Yii::$app->request->post('Product')['category_id'];
+            $model->image = UploadedFile::getInstance($model, 'image');
+
+            if ($model->validate()) {
+                $imgUniqueName = uniqid('pro-');
+                $model->image->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $model->image->extension);
+                $model->image = $imgUniqueName . '.' . $model->image->extension;
                 $model->save();
                 return $this->redirect(['view', 'id' => $model->id]);
             }
@@ -100,19 +108,28 @@ class ProductController extends CustomController
         $model = $this->findModel($id);
         $model->scenario = Product::SCENARIO_UPDATE;
 
-        $uploadPath = Yii::getAlias('@storage/uploads');
-        $file = UploadedFile::getInstance($model, 'image');
-        $ofile = $model->image;
-        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
-            if(isset($file)) {
-                $model->image = \Yii::$app->security->generateRandomString() . '.' . $file->extension;
-                $file->saveAs($uploadPath . '/' . $model->image);
-            } else {
-                $model->image = $ofile;
+        if ($this->request->isPost) {
+            $oldImage = $model->image;
+        
+            $model->name  = Yii::$app->request->post('Product')['name'] ?? $model->name;
+            $model->type  = Yii::$app->request->post('Product')['type'] ?? $model->type;
+            $model->qty   = Yii::$app->request->post('Product')['qty'] ?? $model->qty;
+            $model->price = Yii::$app->request->post('Product')['price'] ?? $model->price;
+            $model->category_id = Yii::$app->request->post('Product')['category_id'] ?? $model->category_id;
+            
+            $newImage = UploadedFile::getInstance($model, 'image');
+            $model->image = $newImage ?? $model->image;
+            if($model->validate()) {
+                if($newImage != null) {
+                    $imgUniqueName = uniqid('pro-');
+                    $newImage->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $newImage->extension);
+                    $model->image = $imgUniqueName . '.' . $model->image->extension;                
+                    $this->deleteFile(Yii::getAlias('@storage/uploads') . '/' . $oldImage);
+                }
+    
+                $model->save();
+                return $this->redirect(['view', 'id' => $model->id]);
             }
-
-            $model->save();
-            return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [

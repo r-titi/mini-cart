@@ -7,7 +7,7 @@ trait ResponseHelper {
         $this->response->setStatusCode($code);
         return [
             'message' => $msg,
-            'data' => $data
+            'data' => ($code < 400) ? $data : ['errors' => $data]
         ];
     }
 }

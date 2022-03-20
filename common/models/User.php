@@ -2,6 +2,8 @@
 
 namespace common\models;
 
+use tuyakhov\notifications\NotifiableInterface;
+use tuyakhov\notifications\NotifiableTrait;
 use Yii;
 use yii\base\NotSupportedException;
 use yii\behaviors\TimestampBehavior;
@@ -24,8 +26,10 @@ use yii\web\IdentityInterface;
  * @property string $password write-only password
  * @property string $access_token
  */
-class User extends ActiveRecord implements IdentityInterface
+class User extends ActiveRecord implements IdentityInterface, NotifiableInterface
 {
+    use NotifiableTrait;
+
     const STATUS_DELETED = 0;
     const STATUS_INACTIVE = 9;
     const STATUS_ACTIVE = 10;
@@ -74,6 +78,11 @@ class User extends ActiveRecord implements IdentityInterface
     public static function findIdentityByAccessToken($token, $type = null)
     {
         return static::findOne(['access_token' => $token]);
+    }
+
+    public static function findByEmail($email)
+    {
+        return static::findOne(['email' => $email]);
     }
 
     // public function generateAccessToken()
@@ -225,5 +234,10 @@ class User extends ActiveRecord implements IdentityInterface
     public function getCarts()
     {
         return $this->hasMany(Cart::className(), ['user_id' => 'id']);
+    }
+
+    public function routeNotificationForMail() 
+    {
+        return $this->email;
     }
 }
