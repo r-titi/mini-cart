@@ -33,8 +33,8 @@ AppAsset::register($this);
         });
 
         var channel = pusher.subscribe('seller-' + user_id);
-        channel.bind('my-event', function(data) {
-            alert(JSON.stringify(data['subject']));
+        channel.bind('submit-order', function(data) {
+            alert(JSON.stringify(data['message']));
         });
     </script>
 </head>

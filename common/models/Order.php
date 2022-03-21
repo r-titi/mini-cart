@@ -2,6 +2,7 @@
 
 namespace common\models;
 
+use common\events\OrderEvent;
 use common\models\queries\OrderQuery;
 use Yii;
 use yii\behaviors\TimestampBehavior;
@@ -23,6 +24,7 @@ use yii\db\ActiveRecord;
  */
 class Order extends \yii\db\ActiveRecord
 {
+    const EVENT_SUBMIT_ORDER = 'submit-order';
     /**
      * {@inheritdoc}
      */
@@ -58,6 +60,11 @@ class Order extends \yii\db\ActiveRecord
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_id' => 'id']],
         ];
     }
+
+    // public function init()
+    // {
+    //     $this->on(OrderEvent::EVENT_SUBMIT_ORDER, ['common\events\OrderEvent', 'handleOrderSubmit']);
+    // }
 
     /**
      * {@inheritdoc}

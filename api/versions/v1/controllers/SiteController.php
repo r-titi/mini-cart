@@ -2,8 +2,8 @@
 
 namespace api\versions\v1\controllers;
 
-use common\helpers\notification\NotificationHelper;
-use common\helpers\PusherHelper;
+use common\events\handlers\OrderHandler;
+use common\events\OrderEvent;
 use common\models\Cart;
 use common\models\Category;
 use common\models\Order;
@@ -11,16 +11,30 @@ use common\models\OrderItem;
 use common\models\Product;
 use common\models\Shipping;
 use common\models\User;
-use common\notifications\OrderNotification;
 use common\traits\EmailHelper;
 use Exception;
-use Pusher\Pusher;
 use Yii;
 use yii\filters\AccessControl;
 
 class SiteController extends BaseController
 {
     use EmailHelper;
+
+    const EVENT_SUBMIT_ORDER = 'submit-order';
+
+    public function init()
+    {
+        parent::init();
+
+        //bind event
+        $this->on(
+            self::EVENT_SUBMIT_ORDER,
+            [
+                new OrderHandler,
+                'handleSubmitOrder',
+            ]
+        );
+    }
 
     public function behaviors()
     {
@@ -57,6 +71,28 @@ class SiteController extends BaseController
             'add-to-cart' => ['POST'], 'checkout' => ['POST'], 'remove-from-cart' => ['DELETE'],
             'clear-cart' => ['DELETE'],
         ];
+    }
+
+     /**
+     * Return the OrderEvent
+     *
+     * @param Order $order the order model object
+     * @param Shipping $shipping shipping model
+     * @param $order_items_amount order items amount
+     * @param User $user user to notify
+     *
+     * @return OrderEvent
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function getOrderEvent(Order $order, Shipping $shipping, $order_items_amount, $user)
+    {
+        return \Yii::createObject([
+            'class' => OrderEvent::class, 
+            'order' => $order,
+            'shipping' => $shipping,
+            'amount' => $order_items_amount,
+            'user' => $user
+        ]);
     }
 
     public function actionGetProducts() {
@@ -192,23 +228,8 @@ class SiteController extends BaseController
                     $order_items_amount += $item['total'];
                 }
                 
-                $user = User::findByEmail($seller['email']);
-
-                $notificationHelper = new NotificationHelper(['mail', 'database']);
-                $data = [
-                    'subject' => 'New Order',
-                    'body' => $shipping->first_name . ' ' . $shipping->last_name . ' has been submited new order',
-                    'order_items_amount' => $order_items_amount,
-                    'shipping' => $shipping
-                ];
-
-                $notification = new OrderNotification($data, $order);
-                $notificationHelper->send([$user], $notification);
-            
-                $data['message'] = 'New Order';
-                $data['body'] = $shipping->first_name . ' ' . $shipping->last_name . ' has been submited new order';
-                $pusherHelper = new PusherHelper();
-                $pusherHelper->trigger('seller-' . $user->id, 'my-event', $data);
+                //fire notification event
+                $this->trigger(self::EVENT_SUBMIT_ORDER, $this->getOrderEvent($order, $shipping, $order_items_amount, User::findByEmail($seller['email'])));
             }
 
             $transaction->commit();

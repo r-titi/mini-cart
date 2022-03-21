@@ -1,4 +1,7 @@
 <?php
+
+use common\events\OrderHandler;
+
 return [
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -11,6 +14,13 @@ return [
         ],
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
+        ],
+        'queue' => [
+            'class' => \yii\queue\db\Queue::class,
+            'db' => 'db', // DB connection component or its config 
+            'tableName' => '{{%queue}}', // Table name
+            'channel' => 'default', // Queue channel key
+            'mutex' => \yii\mutex\MysqlMutex::class, // Mutex used to sync queries
         ],
         // 'email-component' => 'common\components\EmailComponent'
     ],

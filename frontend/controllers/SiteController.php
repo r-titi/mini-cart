@@ -76,6 +76,7 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
+        // die(extension_loaded('pcntl'));
         return $this->render('index', [
             'products' => Product::find()->all()
         ]);
