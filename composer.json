@@ -20,7 +20,9 @@
         "yiisoft/yii2-swiftmailer": "~2.0.0 || ~2.1.0",
         "yii2mod/yii2-cart": "*",
         "yii2mod/yii2-swagger": "*",
-        "pusher/pusher-php-server": "^7.0"
+        "pusher/pusher-php-server": "^7.0",
+        "yiisoft/yii2-queue": "^2.3",
+        "urbanindo/yii2-queue": "*"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
