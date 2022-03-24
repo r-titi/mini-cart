@@ -3,6 +3,7 @@
 namespace seller\controllers;
 
 use common\components\Helpers;
+use common\filters\rules\OwnerAccessRule;
 use common\models\Category;
 use common\models\data\ProductData;
 use common\models\Product;
@@ -12,6 +13,7 @@ use common\traits\FileHelper;
 use seller\traits\PermissionTrait;
 use Yii;
 use yii\data\ActiveDataProvider;
+use yii\filters\AccessControl;
 use yii\web\NotFoundHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\UploadedFile;
@@ -30,11 +32,20 @@ class ProductController extends CustomController
         return array_merge(
             parent::behaviors(),
             [
-                // [
-                //     'class' => BlameableBehavior::className(),
-                //     'createdByAttribute' => 'user_id',
-                //     'updatedByAttribute' => false,
-                // ],
+                'ownerOnlyAccess' => [
+                    'class' => AccessControl::className(),
+                    'only' => ['update', 'delete'],
+                    'rules' => [
+                        [
+                            'actions' => ['update', 'delete'],
+                            'allow' => true,
+                            'roles' => ['seller'],
+                            'matchCallback' => function ($rule, $action) {
+                                return $this->isModelOwner();
+                            }
+                        ],
+                    ],
+                ],
             ]
         );
     }
@@ -119,9 +130,6 @@ class ProductController extends CustomController
     {
         $model = $this->findModel($id);
         $model->scenario = Product::SCENARIO_UPDATE;
-        if(!$this->canEdit($model->user_id)) {
-            throw new ForbiddenHttpException('You are not allowed to edit this product.');
-        }
 
         if ($this->request->isPost) {
             $oldImage = $model->image;
@@ -162,12 +170,7 @@ class ProductController extends CustomController
      */
     public function actionDelete($id)
     {
-        $model = $this->findModel($id);
-        if (!Yii::$app->user->can('admin') && Yii::$app->user->id != $model->user_id) {
-            throw new ForbiddenHttpException('You are not allowed to edit this product.');
-        }
-        
-        $model->delete();
+        $this->findModel($id)->delete();
         return $this->redirect(['index']);
     }
 

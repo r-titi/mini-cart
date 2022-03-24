@@ -2,6 +2,7 @@
 
 namespace seller\controllers;
 
+use Yii;
 use yii\web\Controller;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
@@ -30,5 +31,10 @@ class CustomController extends Controller {
                 ],
             ],
         ];
+    }
+
+    protected function isModelOwner()
+    {
+        return $this->findModel(Yii::$app->request->get('id'))->user_id === Yii::$app->user->id;
     }
 }

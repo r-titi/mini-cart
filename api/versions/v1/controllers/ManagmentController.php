@@ -3,12 +3,11 @@
 namespace api\versions\v1\controllers;
 
 use api\versions\v1\traits\FileHelper;
+use common\helpers\ApiRouteHelper;
 use common\models\Category;
 use common\models\Order;
 use common\models\Product;
 use Yii;
-use yii\behaviors\TimestampBehavior;
-use yii\db\ActiveRecord;
 use yii\filters\AccessControl;
 use yii\web\UploadedFile;
 
@@ -19,11 +18,7 @@ class ManagmentController extends BaseController
     public function behaviors()
     {
         $behaviors = parent::behaviors();
-        $behaviors['authenticator']['only'] = [
-            'get-products', 'show-product', 'create-product', 'update-product', 'delete-product',
-            'get-categories', 'show-category', 'create-category', 'update-category', 'delete-category',
-            'get-orders', 'show-order', 'delete-order'
-        ];
+        $behaviors['authenticator']['only'] = ApiRouteHelper::getActionsList(__FILE__);
 
         $behaviors['access'] = [
             'class' => AccessControl::className(),
@@ -31,10 +26,17 @@ class ManagmentController extends BaseController
                 [
                     'allow' => true,
                     'actions' => [
-                        'get-products', 'show-product', 'create-product', 'update-product', 'delete-product', 
-                        'get-categories', 'show-category'
+                        'get-products', 'show-product', 'create-product', 'get-categories', 'show-category'
                     ],
+                    'roles' => ['admin', 'seller']
+                ],
+                [
+                    'allow' => true,
+                    'actions' => ['update-product', 'delete-product'],
                     'roles' => ['admin', 'seller'],
+                    'matchCallback' => function ($rule, $action) {
+                        return $this->isModelOwner('product') || Yii::$app->user->can('admin');
+                    }
                 ],
                 [
                     'allow' => true,
@@ -44,25 +46,12 @@ class ManagmentController extends BaseController
             ],
         ];
 
-        $behaviors['timestamp'] = [
-            'class' => TimestampBehavior::className(),
-            'attributes' => [
-                ActiveRecord::EVENT_BEFORE_INSERT => 'creation_time',
-                ActiveRecord::EVENT_BEFORE_UPDATE => 'update_time',
-            ],
-            'value' => function() { return date('U'); },
-        ];
         return $behaviors;
     }
 
     protected function verbs()
     {
-        return [
-            'get-products' => ['GET'], 'show-product' => ['GET'], 'create-product' => ['POST'], 'update-product' => ['PUT'],
-            'delete-product' => ['DELETE'], 'get-categories' => ['GET'], 'show-category' => ['GET'], 'create-category' => ['POST'],
-            'update-category' => ['PUT'], 'delete-category' => ['DELETE'], 'get-orders' => ['GET'], 'show-order' => ['GET'],
-            'delete-order' => ['DELETE']
-        ];
+        return ApiRouteHelper::generateVerbsFromController(__FILE__);
     }
 
     public function actionGetProducts() {
@@ -80,7 +69,6 @@ class ManagmentController extends BaseController
         $model = new Product();
         $model->setScenario(Product::SCENARIO_CREATE);
 
-        $model->user_id = Yii::$app->user->id;
         $model->name  = Yii::$app->request->post('name');
         $model->type  = Yii::$app->request->post('type');
         $model->qty   = Yii::$app->request->post('qty');
@@ -88,21 +76,20 @@ class ManagmentController extends BaseController
         $model->category_id = Yii::$app->request->post('category_id');
         $model->image = UploadedFile::getInstanceByName('image');
 
-        if ($model->validate()) {
-            $imgUniqueName = uniqid('pro-');
-            $model->image->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $model->image->extension);
-            $model->image = $imgUniqueName . '.' . $model->image->extension;
-            $model->save();
-            return $this->sendResponse('Product created successfully', $model, 201);
-        } else {
+        if (!$model->validate()) {
             return $this->sendResponse('Cannot create product, validate your input!', $model->getErrors(), 400);
         }
+        
+        $imgUniqueName = uniqid('pro-');
+        $model->image->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $model->image->extension);
+        $model->image = $imgUniqueName . '.' . $model->image->extension;
+        $model->save();
+        return $this->sendResponse('Product created successfully', $model, 201);
     }
 
     public function actionUpdateProduct($id) {
         $model = $this->findModel($id, self::PRODUCT);
         $model->scenario = Product::SCENARIO_UPDATE;
-        $this->checkAccess('update', $model);
 
         $oldImage = $model->image;
         
@@ -115,26 +102,25 @@ class ManagmentController extends BaseController
         $newImage = UploadedFile::getInstanceByName('image');
         $model->image = $newImage ?? $model->image;
 
-        if ($model->validate()) {
-            if($newImage != null) {
-                $imgUniqueName = uniqid('pro-');
-                $newImage->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $newImage->extension);
-                $model->image = $imgUniqueName . '.' . $model->image->extension;                
-                $this->deleteFile(Yii::getAlias('@storage/uploads') . '/' . $oldImage);
-            }
-
-            $model->save();
-
-            return $this->sendResponse('Product updated successfully', $model);
-        } else {
+        if (!$model->validate()) {
             return $this->sendResponse('Cannot update product', $model->getErrors(), 400);
         }
+
+        if($newImage != null) {
+            $imgUniqueName = uniqid('pro-');
+            $newImage->saveAs('@storage/uploads' . '/' . $imgUniqueName . '.' . $newImage->extension);
+            $model->image = $imgUniqueName . '.' . $model->image->extension;                
+            $this->deleteFile(Yii::getAlias('@storage/uploads') . '/' . $oldImage);
+        }
+
+        $model->save();
+
+        return $this->sendResponse('Product updated successfully', $model);
     }
 
     public function actionDeleteProduct($id) {
         $model = $this->findModel($id, self::PRODUCT);
-        $model->scenario = Product::SCENARIO_UPDATE;
-        $this->checkAccess('delete', $model);
+        $model->scenario = Product::SCENARIO_DELETE;
         if ($model->delete() > 0) {
             $this->deleteFile(Yii::getAlias('@storage/uploads') . '/' . $model->image);
             $this->response->setStatusCode(204);
@@ -171,9 +157,9 @@ class ManagmentController extends BaseController
 
         if ($model->validate() && $model->save()) {
             return $this->sendResponse('Category updated successfully', $model);
-        } else {
-            return $this->sendResponse('Cannot update Category', $model->getErrors(), 400);
         }
+
+        return $this->sendResponse('Cannot update Category', $model->getErrors(), 400);
     }
 
     public function actionDeleteCategory($id) {

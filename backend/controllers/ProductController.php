@@ -69,9 +69,6 @@ class ProductController extends CustomController
         $model->setScenario(Product::SCENARIO_CREATE);
 
         if ($this->request->isPost) {
-
-            // Helpers::dd($filse);
-            $model->user_id = Yii::$app->user->id;
             $model->name  = Yii::$app->request->post('Product')['name'];
             $model->type  = Yii::$app->request->post('Product')['type'];
             $model->qty   = Yii::$app->request->post('Product')['qty'];

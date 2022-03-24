@@ -2,9 +2,11 @@
 
 namespace common\models;
 
+use common\behaviors\AuthorBehavior;
 use common\events\OrderEvent;
 use common\models\queries\OrderQuery;
 use Yii;
+use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 
@@ -25,6 +27,7 @@ use yii\db\ActiveRecord;
 class Order extends \yii\db\ActiveRecord
 {
     const EVENT_SUBMIT_ORDER = 'submit-order';
+    
     /**
      * {@inheritdoc}
      */
@@ -44,6 +47,12 @@ class Order extends \yii\db\ActiveRecord
                 ],
                 'value' => function() { return date('U'); },
             ],
+            'author' => [
+                'class' => AuthorBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_VALIDATE => 'user_id',
+                ],
+            ],
         ];
     }
 
@@ -53,7 +62,7 @@ class Order extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['total', 'user_id', 'created_at'], 'required'],
+            [['total', 'user_id'], 'required'],
             [['total'], 'number'],
             [['user_id', 'created_at', 'updated_at'], 'integer'],
             [['status'], 'string', 'max' => 255],

@@ -2,7 +2,11 @@
 
 namespace common\models;
 
+use common\behaviors\AuthorBehavior;
+use common\behaviors\CartTotalBehavior;
 use Yii;
+use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "{{%cart}}".
@@ -19,6 +23,36 @@ use Yii;
  */
 class Cart extends \yii\db\ActiveRecord
 {
+    
+    public function behaviors()
+    {
+        return [
+            'timestamp' => [
+                'class' => TimestampBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_INSERT => 'created_at',
+                    ActiveRecord::EVENT_BEFORE_UPDATE => 'updated_at',
+                ],
+                'value' => function() { return date('U'); },
+            ],
+            'author' => [
+                'class' => AuthorBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_VALIDATE => 'user_id',
+                ],
+            ],
+            'carttotal' => [
+                'class' => CartTotalBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_VALIDATE => 'total'
+                ],
+                'value' => function() {
+                    return $this->qty * $this->product->price;
+                }
+            ]
+        ];
+    }
+    
     /**
      * {@inheritdoc}
      */
@@ -33,8 +67,9 @@ class Cart extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-            [['user_id', 'product_id', 'qty'], 'required'],
+            [['user_id', 'product_id', 'qty', 'total'], 'required'],
             [['user_id', 'product_id', 'qty', 'created_at'], 'integer'],
+            [['qty'], 'qtyIsAvailable'],
             [['product_id'], 'exist', 'skipOnError' => true, 'targetClass' => Product::className(), 'targetAttribute' => ['product_id' => 'id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_id' => 'id']],
         ];
@@ -52,6 +87,11 @@ class Cart extends \yii\db\ActiveRecord
             'qty' => 'Qty',
             'created_at' => 'Created At',
         ];
+    }
+
+    public function qtyIsAvailable($attribute, $params) {
+        if($this->qty > $this->product->qty)
+            $this->addError('qty', 'this qty for this product is not available!!');
     }
 
     /**

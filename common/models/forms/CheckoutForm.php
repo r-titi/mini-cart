@@ -1,6 +1,6 @@
 <?php
 
-namespace api\versions\v1\models;
+namespace common\models\forms;
 
 use common\behaviors\CartTotalBehavior;
 use common\models\Cart;

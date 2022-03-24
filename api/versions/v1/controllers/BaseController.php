@@ -21,10 +21,10 @@ class BaseController extends Controller
 {
     use ResponseHelper;
 
-    public const PRODUCT = 'product';
-    public const CATEGORY = 'category';
-    public const CART = 'cart';
-    public const ORDER = 'order';
+    public const PRODUCT = 'common\models\Product';
+    public const CATEGORY = 'common\models\Category';
+    public const CART = 'common\models\Cart';
+    public const ORDER = 'common\models\Order';
 
     public $serializer = [
         'class' => 'yii\rest\Serializer',
@@ -56,24 +56,14 @@ class BaseController extends Controller
         }
     }
 
+    protected function isModelOwner($type)
+    {
+        return $this->findModel(Yii::$app->request->get('id'), $type)->user_id === Yii::$app->user->id;
+    }
+
     protected function findModel($id, $type)
     {
-        $model = null;
-
-        switch($type) {
-            case self::PRODUCT:
-                $model = Product::findOne(['id' => $id]);
-                break;
-            case self::CATEGORY:
-                $model = Category::findOne(['id' => $id]);
-                break;
-            case self::ORDER:
-                $model = Order::findOne(['id' => $id]);
-                break;
-            case self::CART:
-                $model = Cart::findOne(['id' => $id]);
-                break;
-        }
+        $model = $type::findOne(['id' => $id]);
         
         if($model != null)
             return $model;

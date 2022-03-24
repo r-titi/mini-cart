@@ -2,7 +2,10 @@
 
 namespace common\models;
 
+use common\behaviors\AuthorBehavior;
+use common\behaviors\UserBehavior;
 use Yii;
+use yii\db\ActiveRecord;
 
 /**
  * This is the model class for table "{{%product}}".
@@ -24,13 +27,26 @@ class Product extends \yii\db\ActiveRecord
 {
     const SCENARIO_CREATE = 'create';
     const SCENARIO_UPDATE = 'update';
+    const SCENARIO_DELETE = 'delete';
 
     public function scenarios()
     {
         $scenarios = parent::scenarios();
         $scenarios['create'] = ['name', 'price', 'user_id', 'category_id', 'image'];
-        $scenarios['update'] = ['name', 'price', 'user_id', 'category_id'];
+        $scenarios['update'] = ['name', 'price', 'user_id', 'category_id', 'image'];
         return $scenarios;
+    }
+
+    public function behaviors()
+    {
+        return [
+            'author' => [
+                'class' => AuthorBehavior::className(),
+                'attributes' => [
+                    ActiveRecord::EVENT_BEFORE_VALIDATE => 'user_id',
+                ],
+            ],
+        ];
     }
 
     /**
@@ -56,8 +72,6 @@ class Product extends \yii\db\ActiveRecord
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['user_id' => 'id']],
             [['image'], 'required', 'on' => self::SCENARIO_CREATE],
             [['image'], 'image', 'extensions' => 'jpg, jpeg, png',],
-            // [['image'], 'imageRequired', 'skipOnEmpty' => false],
-            // [['image'], 'imageType', 'skipOnEmpty' => false]
         ];
     }
 
@@ -116,35 +130,4 @@ class Product extends \yii\db\ActiveRecord
     {
         return new \common\models\queries\ProductQuery(get_called_class());
     }
-
-    // public function imageRequired($attribute, $params)
-    // {
-    //     if($this->scenario == self::SCENARIO_CREATE && !array_key_exists('image', $_FILES) && $_FILES['image'] == '') {
-    //         $this->addError('image', 'Image cannot be blank');
-    //     }
-    // }
-
-    // public function imageType($attribute, $params) {
-    //     // $file = new File($_FILES['image']);
-    //     if(array_key_exists('image', $_FILES)) {
-    //         $file = new File($_FILES['image']);
-    //         if(!$file->isImage()) {
-    //             $this->addError('image', 'Image extension must be png or jpg!');
-    //         }
-    //     }
-        
-    // }
-
-    // public function imageCheck($attribute, $params)
-    // {
-    //     $file = UploadedFile::getInstance($this, 'image');
-    //     if ($this->scenario == self::SCENARIO_CREATE && !$file) {
-    //         $this->addError('image', 'Image cannot be blank');
-    //     }
-
-    //     if (isset($file) && !in_array($file->extension, ['png', 'jpg', 'jpeg'])) {
-    //         $this->addError('image', 'Image only is allowed, make sure extension is png or jpg or jpeg');
-    //         // return false;
-    //     }
-    // }
 }

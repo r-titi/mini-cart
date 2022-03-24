@@ -8,10 +8,12 @@ use common\helpers\notification\contracts\MailNotificationContract;
 use common\notifications\traits\SendDatabaseNotification;
 use common\models\Order;
 use common\notifications\traits\SendEmailNotification;
+use common\traits\EmailHelper;
+use Yii;
 
 class OrderNotification extends BaseNotification implements MailNotificationContract, DatabaseNotificationContract {
 
-    use SendDatabaseNotification, SendEmailNotification;
+    use SendDatabaseNotification, SendEmailNotification, EmailHelper;
 
     private array $data;
     private Order $order;
@@ -36,7 +38,24 @@ class OrderNotification extends BaseNotification implements MailNotificationCont
     }
 
     public function sendViaMail($notifiables) {
-        return $this->sendEmailNotification($notifiables, $this->viaMail());
+        // return $this->sendEmailNotification($notifiables, $this->viaMail());
+        foreach($notifiables as $notifiable) {
+            if(!$this->sendEmail([
+                'name' => $notifiable->username,
+                'email' => $notifiable->email,
+                'subject' => $this->viaMail()['subject'],
+                'view' => $this->viaMail()['view'],
+                'params' => [
+                    'name' => $notifiable->username,
+                    'customer_name' => $this->viaMail()['shipping']->first_name . ' ' . $this->viaMail()['shipping']->last_name,
+                    'order_items_amount' => $this->viaMail()['order_items_amount'],
+                    'address' => $this->viaMail()['shipping']->address,
+                    'order' => $this->viaMail()['object']
+                ]
+            ])) {
+                Yii::warning('Cannot Send Email For ' . $notifiable->email, 'OrderNotification.sendViaEmail');
+            }
+        }
     }
     
     /**

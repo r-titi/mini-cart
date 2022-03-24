@@ -2,9 +2,12 @@
 
 namespace frontend\controllers;
 
+use common\models\Cart;
+use common\models\Product;
 use Yii;
 use yii\data\ArrayDataProvider;
 use yii\filters\AccessControl;
+use yii\web\NotFoundHttpException;
 
 class CartController extends CustomController {
 
@@ -50,12 +53,30 @@ class CartController extends CustomController {
     }
 
     public function actionClearCart() {
-        Yii::$app->Cart->getInstance()->clear();
-        return $this->redirect(['cart/index']);
+        // Yii::$app->Cart->getInstance()->clear();
+        if(Cart::deleteAll('user_id = ' . Yii::$app->user->id) > 0) {
+            return $this->redirect(['cart/index']);
+        }
     }
 
     public function actionAdd($model_id) {
-        Yii::$app->Cart->getInstance()->add($model_id, 1);
-        return $this->redirect(['cart/index']);
+        // Yii::$app->Cart->getInstance()->add($model_id, 1);
+
+        $product = Product::findOne(['id' => $model_id]);
+        
+        if($product == null)
+            throw new NotFoundHttpException('This product does not exist.');
+        
+        $model = Cart::findOne(['product_id' => $product->id, 'user_id' => Yii::$app->user->id]);
+
+        if($model === null) {
+            $model = new Cart;
+        }
+        
+        $model->product_id = $product->id;
+        $model->qty = $this->request->post('qty');
+        if($model->save()) {
+            return $this->redirect(['cart/index']);
+        }        
     }
 }

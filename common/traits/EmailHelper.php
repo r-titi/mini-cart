@@ -6,6 +6,16 @@ use common\models\forms\SendEmailForm;
 
 trait EmailHelper {
 
+    public function sendEmail(array $data) {
+        $sendEmail = new SendEmailForm();
+        $sendEmail->name = $data['name'];
+        $sendEmail->email = $data['email'];
+        $sendEmail->subject = $data['subject'];
+        $sendEmail->view = ['html' => $data['view']];
+        $sendEmail->params = $data['params'];
+        return $sendEmail->send();
+    }
+
     public function sendUserOrderEmail($email, $order, $shipping) {
         $sendEmail = new SendEmailForm();
         $sendEmail->name = $shipping->first_name . ' ' . $shipping->last_name;
