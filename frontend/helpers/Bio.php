@@ -11,4 +11,14 @@ class Bio {
     public function getDesc() {
         return $this->_desc;
     }
+    
+    public function __construct()
+    {
+        
+    }
+
+    public function __destruct()
+    {
+        
+    }
 }

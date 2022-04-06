@@ -21,4 +21,13 @@ class Camo {
     public function getTitle() {
         return $this->_title;
     }
+    public function __construct()
+    {
+        
+    }
+
+    public function __destruct()
+    {
+        
+    }
 }
